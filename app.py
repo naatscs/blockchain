@@ -1,10 +1,10 @@
+from uuid import uuid4
 from flask import Flask, jsonify
-from pydantic import UUID4
 from blockchain import Blockchain
 
 app = Flask(__name__)
 
-node_identifier = str(UUID4()).replace('-', '')
+node_identifier = str(uuid4()).replace('-', '')
 
 blockchain = Blockchain()
 
