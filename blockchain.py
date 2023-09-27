@@ -3,6 +3,7 @@ import hashlib
 import json
 from urllib.parse import urlparse
 
+import requests 
 
 class Blockchain(object):
     def __init__(self):
@@ -15,6 +16,48 @@ class Blockchain(object):
     def register_node(self, address):
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
+
+    def valid_chain(self, chain):
+        last_block = chain[0]
+        current_index = 1
+
+        while current_index < len(chain):
+            block = chain[current_index]
+            print("last block ", f'{last_block}')
+            print("block ", f'{block}')
+            
+            if block['previous_hash'] != self.hash(last_block):
+                return False
+            
+            if not self.valid_proof(last_block['proof'], block['proof']):
+                return False
+            
+            last_block = block
+            current_index += 1
+
+        return True
+    
+    def resolve_conflicts(self):
+        neighbours = self.nodes
+        new_chain = None
+
+        max_lenght = len(self.chain)
+
+        for node in neighbours:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                lenght = response.json()['lenght']
+                chain = response.json()['chain']
+
+                if lenght > max_lenght and self.valid_chain(chain):
+                    max_lenght = lenght
+                    new_chain = chain
+        
+        if new_chain:
+            self.chain = new_chain
+            return True
+        return False
 
     def new_block(self, proof, previous_hash=None):
         block = {
